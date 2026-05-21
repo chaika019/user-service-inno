@@ -36,11 +36,15 @@ public class PaymentCardService {
         User user = userRepository.findById(paymentCardRequestDto.userId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + paymentCardRequestDto.userId()));
 
-        if(user.getCards().size() >= 5) {
+        if (paymentCardRepository.countByUserId(paymentCardRequestDto.userId()) >= 5) {
             throw new BusinessException("User already has maximum number of cards 5");
         }
 
         PaymentCard paymentCard = paymentCardMapper.toEntity(paymentCardRequestDto);
+        if (paymentCard == null) {
+            throw new BusinessException("Failed to map request to card entity");
+        }
+
         paymentCard.setUser(user);
 
         return paymentCardMapper.toDto(paymentCardRepository.save(paymentCard));

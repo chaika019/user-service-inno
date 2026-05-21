@@ -16,4 +16,6 @@ public interface PaymentCardRepository extends JpaRepository<PaymentCard, Long>,
     List<PaymentCard> findAllByUserId(@Param("userId") Long userId);
 
     boolean existsByNumber(String number);
+
+    long countByUserId(Long userId);
 }
