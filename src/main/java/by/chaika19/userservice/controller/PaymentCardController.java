@@ -43,9 +43,9 @@ public class PaymentCardController {
         return new ResponseEntity<>(cards, HttpStatus.OK);
     }
 
-    @GetMapping("/user/{user-id}")
-    public ResponseEntity<List<PaymentCardResponseDto>> findAllByUserId(@PathVariable(name = "user-id") Long id) {
-        List<PaymentCardResponseDto> cards = paymentCardService.findAllByUserId(id);
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<PaymentCardResponseDto>> findAllByUserId(@PathVariable Long userId) {
+        List<PaymentCardResponseDto> cards = paymentCardService.findAllByUserId(userId);
         return new ResponseEntity<>(cards, HttpStatus.OK);
     }
 
@@ -61,7 +61,7 @@ public class PaymentCardController {
     @PatchMapping("/{id}/status/{active}")
     public ResponseEntity<Void> updateCardStatus(
             @PathVariable Long id,
-            @Valid @PathVariable Boolean active) {
+            @PathVariable Boolean active) {
 
         paymentCardService.updateCardStatus(id, active);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);

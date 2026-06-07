@@ -53,7 +53,7 @@ public class UserController {
     @PatchMapping("/{id}/status/{active}")
     public ResponseEntity<Void> updateUserStatus(
             @PathVariable Long id,
-            @Valid @PathVariable Boolean active) {
+            @PathVariable Boolean active) {
 
         userService.updateUserStatus(id, active);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
