@@ -29,7 +29,7 @@ public class UserService {
     @Transactional
     public UserResponseDto createUser(UserRequestDto userRequestDto) {
 
-        if (userRepository.findByEmail(userRequestDto.email()).isPresent()) {
+        if (userRepository.existsByEmail(userRequestDto.email())) {
             throw new BusinessException("User with email " + userRequestDto.email() + " already exists");
         }
 
@@ -52,6 +52,11 @@ public class UserService {
                 .map(userMapper::toDto);
     }
 
+    /**
+     * Updates user name, surname, birthdate, email.
+     * Note: The 'active' status from UserRequestDto is explicitly ignored here.
+     * User status transitions must be handled solely via {@link #updateUserStatus(Long, Boolean)}.
+     */
     @Transactional
     @CacheEvict(value = "users", key = "#id")
     public UserResponseDto updateUser(Long id, UserRequestDto userRequestDto) {
@@ -59,7 +64,7 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
         if (!user.getEmail().equals(userRequestDto.email()) &&
-                userRepository.findByEmail(userRequestDto.email()).isPresent()) {
+                userRepository.existsByEmail(userRequestDto.email())) {
             throw new BusinessException("Email " + userRequestDto.email() + " is already taken by another user");
         }
 
@@ -73,10 +78,11 @@ public class UserService {
     @Transactional
     @CacheEvict(value = "users", key = "#id")
     public UserResponseDto updateUserStatus(Long id, Boolean active) {
+        userRepository.updateUserStatus(id, active);
+
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
 
-        user.setActive(active);
         return userMapper.toDto(user);
     }
 

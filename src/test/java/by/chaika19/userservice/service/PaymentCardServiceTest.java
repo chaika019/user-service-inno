@@ -9,12 +9,14 @@ import by.chaika19.userservice.model.PaymentCard;
 import by.chaika19.userservice.model.User;
 import by.chaika19.userservice.repository.PaymentCardRepository;
 import by.chaika19.userservice.repository.UserRepository;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -69,7 +71,8 @@ class PaymentCardServiceTest {
                     10L, "1234567812345678", "Egor Chaika", LocalDate.of(2030, 12, 31), true, userId, null, null
             );
 
-            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+            when(paymentCardRepository.countByUserId(userId)).thenReturn(3L);
+            when(userRepository.findByIdForUpdate(userId)).thenReturn(Optional.of(user));
             when(paymentCardMapper.toEntity(requestDto)).thenReturn(paymentCard);
             when(paymentCardRepository.save(paymentCard)).thenReturn(paymentCard);
             when(paymentCardMapper.toDto(paymentCard)).thenReturn(expectedResponse);
@@ -90,7 +93,7 @@ class PaymentCardServiceTest {
                     "1234567812345678", "Egor Chaika", LocalDate.of(2030, 12, 31), true, userId
             );
 
-            when(userRepository.findById(userId)).thenReturn(Optional.empty());
+            when(userRepository.findByIdForUpdate(userId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> paymentCardService.create(requestDto))
                     .isInstanceOf(ResourceNotFoundException.class)
@@ -114,9 +117,10 @@ class PaymentCardServiceTest {
             }
             user.setCards(existingCards);
 
-            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+            when(userRepository.findByIdForUpdate(userId)).thenReturn(Optional.of(user));
+            Mockito.when(paymentCardRepository.countByUserId(anyLong())).thenReturn(5L);
 
-            assertThatThrownBy(() -> paymentCardService.create(requestDto))
+            Assertions.assertThatThrownBy(() -> paymentCardService.create(requestDto))
                     .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("User already has maximum number of cards 5");
 
