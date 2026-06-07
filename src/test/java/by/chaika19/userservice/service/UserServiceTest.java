@@ -50,12 +50,12 @@ class UserServiceTest {
 
             UserRequestDto requestDto = new UserRequestDto("Egor", "Chaika",
                     LocalDate.of(2000, 1, 1), "egor@gmail.com", true);
-            UserResponseDto expectedDto =new UserResponseDto(1L, "Ivan", "Ivanov",
+            UserResponseDto expectedDto = new UserResponseDto(1L, "Ivan", "Ivanov",
                     LocalDate.of(2000, 1, 1), "ivan@mail.com", true,
                     null, null, null);
             User user = new User();
 
-            when(userRepository.findByEmail(requestDto.email())).thenReturn(Optional.empty());
+            when(userRepository.existsByEmail(requestDto.email())).thenReturn(false);
             when(userMapper.toEntity(requestDto)).thenReturn(user);
             when(userRepository.save(user)).thenReturn(user);
             when(userMapper.toDto(user)).thenReturn(expectedDto);
@@ -66,7 +66,7 @@ class UserServiceTest {
             assertThat(actualResponse.id()).isEqualTo(1L);
             assertThat(actualResponse.email()).isEqualTo("ivan@mail.com");
 
-            verify(userRepository, times(1)).findByEmail(requestDto.email());
+            verify(userRepository, times(1)).existsByEmail(requestDto.email());
             verify(userRepository, times(1)).save(user);
         }
 
@@ -74,7 +74,8 @@ class UserServiceTest {
         @DisplayName("Error of creation. Email already in use")
         void createUser_ThrowsBusinessException_WhenEmailExists() {
             UserRequestDto request = new UserRequestDto("Ivan", "Ivanov", LocalDate.of(2000, 1, 1), "ivan@mail.com", true);
-            when(userRepository.findByEmail(request.email())).thenReturn(Optional.of(new User()));
+
+            when(userRepository.existsByEmail(request.email())).thenReturn(true);
 
             assertThatThrownBy(() -> userService.createUser(request))
                     .isInstanceOf(BusinessException.class)
@@ -161,7 +162,8 @@ class UserServiceTest {
             UserResponseDto expectedDto = new UserResponseDto(userId, "Egor", "Chaika", LocalDate.of(2000, 1, 1), "new@gmail.com", true, null, null, null);
 
             when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
-            when(userRepository.findByEmail(requestDto.email())).thenReturn(Optional.empty());
+
+            when(userRepository.existsByEmail(requestDto.email())).thenReturn(false);
             when(userMapper.toDto(existingUser)).thenReturn(expectedDto);
 
             UserResponseDto result = userService.updateUser(userId, requestDto);
@@ -182,12 +184,9 @@ class UserServiceTest {
             existingUser.setId(userId);
             existingUser.setEmail("old@gmail.com");
 
-            User anotherUser = new User();
-            anotherUser.setId(2L);
-            anotherUser.setEmail("taken@gmail.com");
-
             when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
-            when(userRepository.findByEmail(requestDto.email())).thenReturn(Optional.of(anotherUser));
+
+            when(userRepository.existsByEmail(requestDto.email())).thenReturn(true);
 
             assertThatThrownBy(() -> userService.updateUser(userId, requestDto))
                     .isInstanceOf(BusinessException.class)
@@ -208,6 +207,11 @@ class UserServiceTest {
             user.setActive(true);
 
             UserResponseDto expectedDto = new UserResponseDto(userId, "Ivan", "Ivanov", null, "ivan@mail.com", false, null, null, null);
+
+            doAnswer(invocation -> {
+                user.setActive(false);
+                return null;
+            }).when(userRepository).updateUserStatus(userId, false);
 
             when(userRepository.findById(userId)).thenReturn(Optional.of(user));
             when(userMapper.toDto(user)).thenReturn(expectedDto);

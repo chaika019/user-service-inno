@@ -72,7 +72,7 @@ class PaymentCardServiceTest {
             );
 
             when(paymentCardRepository.countByUserId(userId)).thenReturn(3L);
-            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+            when(userRepository.findByIdForUpdate(userId)).thenReturn(Optional.of(user));
             when(paymentCardMapper.toEntity(requestDto)).thenReturn(paymentCard);
             when(paymentCardRepository.save(paymentCard)).thenReturn(paymentCard);
             when(paymentCardMapper.toDto(paymentCard)).thenReturn(expectedResponse);
@@ -93,7 +93,7 @@ class PaymentCardServiceTest {
                     "1234567812345678", "Egor Chaika", LocalDate.of(2030, 12, 31), true, userId
             );
 
-            when(userRepository.findById(userId)).thenReturn(Optional.empty());
+            when(userRepository.findByIdForUpdate(userId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> paymentCardService.create(requestDto))
                     .isInstanceOf(ResourceNotFoundException.class)
@@ -117,7 +117,7 @@ class PaymentCardServiceTest {
             }
             user.setCards(existingCards);
 
-            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+            when(userRepository.findByIdForUpdate(userId)).thenReturn(Optional.of(user));
             Mockito.when(paymentCardRepository.countByUserId(anyLong())).thenReturn(5L);
 
             Assertions.assertThatThrownBy(() -> paymentCardService.create(requestDto))

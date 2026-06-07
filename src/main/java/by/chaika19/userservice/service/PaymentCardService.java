@@ -13,6 +13,7 @@ import by.chaika19.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -31,9 +32,9 @@ public class PaymentCardService {
     private final PaymentCardMapper paymentCardMapper;
 
     @Transactional
-    @CacheEvict(value = "users", key = "#result.userId")
+    @CacheEvict(value = "users", key = "#result.userId()")
     public PaymentCardResponseDto create(PaymentCardRequestDto paymentCardRequestDto) {
-        User user = userRepository.findById(paymentCardRequestDto.userId())
+        User user = userRepository.findByIdForUpdate(paymentCardRequestDto.userId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + paymentCardRequestDto.userId()));
 
         if (paymentCardRepository.countByUserId(paymentCardRequestDto.userId()) >= 5) {
@@ -73,7 +74,10 @@ public class PaymentCardService {
     }
 
     @Transactional
-    @CacheEvict(value = "users", key = "#result.userId")
+    @Caching(evict = {
+            @CacheEvict(value = "users", key = "#result.userId()", condition = "#result != null"),
+            @CacheEvict(value = "cards", key = "#id")
+    })
     public PaymentCardResponseDto updateCard(Long id, PaymentCardRequestDto paymentCardRequestDto) {
         PaymentCard card = paymentCardRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment card not found with id: " + id));
@@ -91,7 +95,10 @@ public class PaymentCardService {
     }
 
     @Transactional
-    @CacheEvict(value = "users", key = "#result.userId")
+    @Caching(evict = {
+            @CacheEvict(value = "users", key = "#result.userId()", condition = "#result != null"),
+            @CacheEvict(value = "cards", key = "#id")
+    })
     public PaymentCardResponseDto updateCardStatus(Long id, Boolean active) {
         PaymentCard card = paymentCardRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment card not found with id: " + id));
@@ -101,7 +108,10 @@ public class PaymentCardService {
     }
 
     @Transactional
-    @CacheEvict(value = "users", key = "#result")
+    @Caching(evict = {
+            @CacheEvict(value = "users", key = "#result"),
+            @CacheEvict(value = "cards", key = "#id")
+    })
     public Long deleteCard(Long id) {
         PaymentCard paymentCard = paymentCardRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Card with id " + id + " not found"));
